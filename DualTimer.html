@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dual Timer App</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="icon180.png">
+
+    <!-- iOS Fullscreen Web App -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dual Timer">
+
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        html, body {
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #333333;
+        }
+
+        body.dark-mode {
+            background-color: #1a2342 !important; /* Dark blue background */
+            color: #f0d0d0 !important; /* Light reddish gray text */
+        }
+
+        /* Wrapper to hold all elements except the toggle */
+        .wrapper {
+            text-align: center;
+            display: inline-block; /* Important for content-based width */
+            position: relative;  /* Make the wrapper the positioning context */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px;
+            margin: 0px;
+            border: 2px solid #333333;
+            border-radius: 10px;
+        }
+
+        .dark-mode .wrapper {
+            border-color: #f0d0d0;
+        }
+
+        /* Main container - multiple positioning techniques for cross-browser compatibility */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .timer-container {
+            margin: 15px 0;
+        }
+
+        input {
+            width: 60px;
+            height: 40px;
+            text-align: center;
+            font-size: 18px;
+            margin-left: 10px;
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid #ccc;
+        }
+
+        .dark-mode input {
+            background-color: #2a3252 !important;
+            color: #f0d0d0 !important;
+            border: 1px solid #4a526f;
+        }
+
+        .button-group {
+            margin-top: 25px;
+        }
+
+        button {
+            margin: 0 5px;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #f8f8f8;
+            color: #333333;
+            min-width: 100px;
+            cursor: pointer;
+        }
+
+				button:active{
+					background-color: #a0a0a0;
+					}
+
+        .dark-mode button {
+            background-color: #3a425f !important;
+            color: #f0d0d0 !important;
+            border: 1px solid #4a526f;
+        }
+
+        #status {
+            font-weight: bold;
+            font-size: 24px;
+            margin-top: 30px;
+            min-height: 32px;
+        }
+
+        /* Dark mode toggle button */
+        #dark-mode-toggle {
+            position: absolute;
+            bottom: -60px; /* Position 30px below the bottom of the wrapper */
+            right: 0; /* Align to the right edge of the wrapper */
+            padding: 8px 12px;
+            font-size: 12px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .dark-mode #dark-mode-toggle {
+            border: 1px solid #4a526f;
+            background-color: #3a425f !important;
+            color: #f0d0d0 !important;
+        }
+				 body, button,  input {
+            transition: background-color 1.5s, color 1.5s, border-color 1.5s;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="app-container">
+        <h1>Dual Timer App</h1>
+        <div class="timer-container">
+            <label>Timer 1 (seconds):</label>
+            <input type="number" id="timer1" min="0" max="60" value="10">
+        </div>
+        <div class="timer-container">
+            <label>Timer 2 (seconds):</label>
+            <input type="number" id="timer2" min="0" max="60" value="10">
+        </div>
+        <div class="button-group">
+            <button id="startButton" onclick="startTimers()">Start</button>
+            <button onclick="stopTimers()">Stop</button>
+            <button onclick="resetTimers()">Reset</button>
+        </div>
+        <p id="status"></p>
+        <button id="dark-mode-toggle">Dark Mode</button>  <!-- Inside the wrapper -->
+    </div>
+</div>
+
+<audio id="alarm" src="https://www.fesliyanstudios.com/play-mp3/4385" preload="auto" muted></audio>
+
+<script>
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("service-worker.js")
+            .then(() => console.log("Service Worker Registered"));
+    }
+
+    // Get DOM elements
+    const timer1Input = document.getElementById('timer1');
+    const timer2Input = document.getElementById('timer2');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+    // Load settings from localStorage
+    function loadSettings() {
+        // Load timer values
+        const savedTimer1 = localStorage.getItem('timer1Value');
+        const savedTimer2 = localStorage.getItem('timer2Value');
+
+        if (savedTimer1) {
+            timer1Input.value = savedTimer1;
+        }
+
+        if (savedTimer2) {
+            timer2Input.value = savedTimer2;
+        }
+
+        // Load dark mode setting
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.textContent = 'Light Mode';
+        }
+    }
+
+    // Save timer values when they change
+    timer1Input.addEventListener('change', () => {
+        localStorage.setItem('timer1Value', timer1Input.value);
+    });
+
+    timer2Input.addEventListener('change', () => {
+        localStorage.setItem('timer2Value', timer2Input.value);
+    });
+
+    // Toggle dark mode
+    darkModeToggle.addEventListener('click', () => {
+        if (document.body.classList.contains('dark-mode')) {
+            document.body.classList.remove('dark-mode');
+            darkModeToggle.textContent = 'Dark Mode';
+            localStorage.setItem('darkMode', 'disabled');
+        } else {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.textContent = 'Light Mode';
+            localStorage.setItem('darkMode', 'enabled');
+        }
+    });
+    let alarm = document.getElementById("alarm");
+
+    // Preload the alarm sound and unmute it
+    window.onload = function () {
+        loadSettings();
+        alarm.load();  // Preload the audio
+    };
+
+    function startTimers() {
+        alarm.muted = false;
+        if (running) return;
+        running = true;
+        paused = false;
+        document.getElementById("startButton").innerText = "Start";
+
+        // Save the current timer values when starting
+        localStorage.setItem('timer1Value', document.getElementById('timer1').value);
+        localStorage.setItem('timer2Value', document.getElementById('timer2').value);
+
+        if (remainingTime > 0) {
+            runTimer(currentTimer, remainingTime, cycleTimers);
+        } else {
+            cycleTimers();
+        }
+    }
+
+    function playAlarm(callback) {
+        if (!running) return;
+        alarm.muted = false;
+        alarm.play();
+        document.getElementById('status').innerText = "Alarm!";
+        setTimeout(() => {
+            alarm.pause();
+            alarm.currentTime = 0; // Reset to the beginning of the sound
+            if (running) callback();
+        }, 1000);
+    }
+
+    let running = false;
+    let paused = false;
+    let remainingTime = 0;
+    let currentTimer = "";
+
+    function stopTimers() {
+        running = false;
+        paused = true;
+        document.getElementById("startButton").innerText = "Resume";
+        document.getElementById('status').innerText = "Timers paused.";
+    }
+
+    function resetTimers() {
+        running = false;
+        paused = false;
+        remainingTime = 0;
+        document.getElementById("startButton").innerText = "Start";
+        document.getElementById('status').innerText = "Timers reset.";
+    }
+
+    function cycleTimers() {
+        if (!running) return;
+
+        let timer1 = parseInt(document.getElementById('timer1').value) || 0;
+        let timer2 = parseInt(document.getElementById('timer2').value) || 0;
+
+        runTimer("Timer 1", timer1, () => {
+            if (running) playAlarm(() => {
+                runTimer("Timer 2", timer2, () => {
+                    if (running) playAlarm(() => {
+                        cycleTimers();
+                    });
+                });
+            });
+        });
+    }
+
+    function runTimer(timerName, seconds, callback) {
+        if (!running || seconds <= 0) {
+            callback();
+            return;
+        }
+
+        currentTimer = timerName;
+        remainingTime = seconds;
+        document.getElementById('status').innerText = `${timerName}: ${seconds} seconds left`;
+        let countdown = setInterval(() => {
+            if (!running) {
+                clearInterval(countdown);
+                return;
+            }
+            if (seconds <= 1) {
+                clearInterval(countdown);
+                remainingTime = 0;
+                callback();
+            } else {
+                document.getElementById('status').innerText = `${timerName}: ${--seconds} seconds left`;
+                remainingTime = seconds;
+            }
+        }, 1000);
+    }
+
+</script>
+</body>
+</html>
