@@ -1,10 +1,11 @@
 const CACHE_NAME = "dual-timer-cache-v1";
 const assets = [
-  "/DualTimer/",
-  "/DualTimer/index.html",
-  "/DualTimer/manifest.json",
-  "/DualTimer/icon.png"
-  "/DualTimer/service-worker.js"
+  "DualTimer.html",
+  "manifest.json",
+  "icon180.png",
+  "service-worker.js",
+  "alarm.mp3",  
+  "beep2.mp3"  
 ];
 
 self.addEventListener("install", event => {
