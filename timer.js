@@ -97,9 +97,25 @@
             alarm.muted = false;
             tickSound.muted = false;
             if (running) return;
-            running = true;
-            document.getElementById("startButton").innerText = "Start";
-            cycleTimers();
+        
+            // Toggle running state
+            running = !running;
+        
+            // Toggle pause state only if we're stopping the timer
+            if (!running) {
+                paused = true;
+                document.getElementById("startButton").innerText = "Resume";
+                document.getElementById('status').innerText = "Timers paused.";
+                tickSound.pause();  // Keep the pause here, but only if STOPPING
+                console.log("startTimers: Setting paused to true, exiting"); // Added log
+                return; //Very important to exit here, after the pause button has been pressed.
+            }
+        
+            document.getElementById("startButton").innerText = "Start";  //reset the text after the toggle is pressed.
+            document.getElementById('status').innerText = "";
+            console.log("startTimers: Paused flag before cycleTimers: ", paused); //Added Log
+        
+            cycleTimers(paused);
         }
 
         function playAlarm(callback) {
@@ -124,7 +140,7 @@
             paused = true;
             document.getElementById("startButton").innerText = "Resume";
             document.getElementById('status').innerText = "Timers paused.";
-            tickSound.pause();
+            //tickSound.pause();
         }
 
         function resetTimers() {
@@ -140,83 +156,92 @@
             lastTimer = "";
         }
 
-        function cycleTimers() {
+        function cycleTimers(paused) { //PASSED Paused here
             if (!running) return;
-
+        
             let timer1 = programs[currentProgram].timer1;
             let timer2 = programs[currentProgram].timer2;
-
+        
             // Determine which timer to start based on lastTimer
             if (paused) {
-                paused = false; // Reset paused state
-
+                //paused = false; // Reset paused state
+        
                 if (lastTimer === "Timer 1") {
-                    runTimer("Timer 1", remainingTime1, () => {
-                        timer2Sequence(programs[currentProgram].timer2);
+                    runTimer("Timer 1", remainingTime1, paused, () => { //PASSED Paused here
+                        timer2Sequence(programs[currentProgram].timer2, paused);
                     });
                 } else if (lastTimer === "Timer 2") {
-                    runTimer("Timer 2", remainingTime2, () => {
-                        timer1Sequence(timer1);
+                    runTimer("Timer 2", remainingTime2, paused, () => { //PASSED Paused here
+                        timer1Sequence(timer1, paused);
                     });
                 } else {
                     // If no timer was running before pause, start with Timer 1
-                    timer1Sequence(timer1);
+                    timer1Sequence(timer1, paused);
                 }
             } else {
                 // If not paused, start with Timer 1
-                timer1Sequence(timer1);
+                timer1Sequence(timer1, paused);
             }
         }
 
-        function timer1Sequence(timer1) {
-            runTimer("Timer 1", timer1, () => {
+        function timer1Sequence(timer1, paused) { //PASSED Paused here
+            runTimer("Timer 1", timer1, paused, () => { //PASSED Paused here
                 if (running && timer1 > 0) {
                     playAlarm(() => {
-                        timer2Sequence(programs[currentProgram].timer2);
+                        timer2Sequence(programs[currentProgram].timer2, paused);
                     });
                 } else if (running) {
-                    timer2Sequence(programs[currentProgram].timer2);
+                    timer2Sequence(programs[currentProgram].timer2, paused);
                 }
             });
         }
-
-        function timer2Sequence(timer2) {
-            runTimer("Timer 2", timer2, () => {
+        
+        function timer2Sequence(timer2, paused) { //PASSED Paused here
+            runTimer("Timer 2", timer2, paused, () => { //PASSED Paused here
                 if (running && timer2 > 0) {
                     playAlarm(() => {
-                        cycleTimers();
+                        cycleTimers(paused);
                     });
                 } else if (running) {
-                    cycleTimers();
+                    cycleTimers(paused);
                 }
             });
         }
-
-        function runTimer(timerName, seconds, callback) {
+        function runTimer(timerName, seconds, paused, callback) { //PASSED Paused here.
+            console.log("runTimer: paused flag at start: ", paused); // Added Log
             if (!running) {
+                console.log("runTimer: Not running, pausing tickSound and returning");
                 tickSound.pause();
+                console.log("runTimer: tickSound paused");
                 callback();
                 return;
             }
-
-            lastTimer = timerName; // Store the active timer
+        
+            lastTimer = timerName;
             currentTimer = timerName;
             remainingTime = seconds;
             updateCountdownCircle(seconds);
-            tickSound.pause();
-
-            if (!paused) 
+        
+            if (!paused) {
+                console.log("runTimer: Not paused, resetting tickSound.currentTime to 0");
                 tickSound.currentTime = 0;
-            
-            if (seconds > 0)
+                console.log("runTimer: tickSound.currentTime reset to 0");
+            }
+        
+            if (seconds > 0) {
+                console.log("runTimer: Seconds > 0, playing tickSound");
                 tickSound.play();
-                
+                console.log("runTimer: tickSound playing");
+            }
+        
             document.getElementById('status').innerText = `${timerName}: running`;
-
+        
             let countdown = setInterval(() => {
                 if (!running) {
                     clearInterval(countdown);
+                    console.log("runTimer: Timer stopped, pausing tickSound");
                     tickSound.pause();
+                    console.log("runTimer: tickSound paused");
                     if (timerName === "Timer 1") {
                         remainingTime1 = seconds;
                     } else if (timerName === "Timer 2") {
@@ -227,24 +252,25 @@
                 if (seconds <= 1) {
                     clearInterval(countdown);
                     remainingTime = 0;
+                    console.log("runTimer: Timer finished, pausing tickSound");
                     tickSound.pause();
+                    console.log("runTimer: tickSound paused");
                     updateCountdownCircle("");
-
+        
                     if (timerName === "Timer 1") {
                         remainingTime1 = 0;
                     } else if (timerName === "Timer 2") {
-                        remainingTime2 = 0;
+                        remainingTime2 = seconds;
                     }
-
-                    // Play alarm here, *before* calling the callback, ONLY if timer was paused
-                    if (paused) { // only play alarm if timer was paused.
-                        if (running) { //Ensure we should still be playing.
+        
+                    if (paused) {
+                        if (running) {
                             playAlarm(callback);
                         } else {
                             callback();
                         }
                     } else {
-                        callback(); // Just call the callback if the timer wasn't paused.
+                        callback();
                     }
                 } else {
                     seconds--;
@@ -257,6 +283,16 @@
                     }
                 }
             }, 1000);
+        }
+        
+        function stopTimers() {
+            running = false;
+            paused = true;
+            document.getElementById("startButton").innerText = "Resume";
+            document.getElementById('status').innerText = "Timers paused.";
+            console.log("stopTimers: Pausing tickSound");
+            tickSound.pause();
+            console.log("stopTimers: tickSound paused");
         }
 
         function updateCountdownCircle(seconds) {
