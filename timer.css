@@ -1,0 +1,204 @@
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: bisque;
+            color: #333333;
+            display: flex;
+            /* Use Flexbox on body */
+            justify-content: center;
+            /* Center horizontally */
+            align-items: center;
+            /* Center vertically */
+        }
+
+        body.dark-mode {
+            background-color: #1a2342 !important;
+            color: #f0d0d0 !important;
+        }
+
+        #app-wrapper {
+            display: flex;
+            flex-direction: column;
+            /* Default to column for portrait */
+            align-items: center;
+            /* Center items horizontally */
+            justify-content: center;
+            /* Center items vertically */
+            width: 100%;
+            min-height: 100%;
+        }
+
+        /* Countdown Circle */
+        #countdown-circle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 12em;
+            font-weight: bold;
+            color: hsl(80, 59%, 45%);
+            background-color: #ffffff;
+            border: 2px solid #333;
+            transition: all 0.5s ease;
+            margin-bottom: 20px;
+            /* Spacing in portrait */
+        }
+
+        .dark-mode #countdown-circle {
+            color: #f0d0d0;
+            border-color: #f0d0d0;
+        }
+
+        /* Wrapper to hold timer controls */
+        .wrapper {
+            text-align: center;
+            display: inline-block;
+            padding: 10px;
+            margin: 0;
+            /* Reset margins */
+            border: 2px solid #333333;
+            border-radius: 10px;
+            background-color: #FFFFFF;
+            transition: all 0.5s ease;
+        }
+
+        .dark-mode .wrapper {
+            border-color: #f0d0d0;
+        }
+
+        /* Main container for timer elements */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .timer-container {
+            margin: 15px 0;
+        }
+
+        input {
+            width: 60px;
+            height: 40px;
+            text-align: center;
+            font-size: 18px;
+            margin-left: 10px;
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid #000;
+        }
+
+        .dark-mode input {
+            background-color: #2a3252 !important;
+            color: #f0d0d0 !important;
+            border: 1px solid #4a526f;
+        }
+
+        .program-buttons {
+            margin-bottom: 10px;
+        }
+
+        .program-buttons button {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 2px solid #555;
+        }
+
+        .program-buttons button.selected {
+            background-color: hsl(80, 61%, 60%);
+            color: #000;
+        }
+
+        .button-group {
+            margin-top: 25px;
+        }
+
+        button {
+            margin: 0 5px;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 2px solid #555;
+            background-color: #f8f8f8;
+            color: #333333;
+            min-width: 100px;
+            cursor: pointer;
+        }
+
+        button:active {
+            background-color: #a0a0a0;
+        }
+
+        .dark-mode button {
+            background-color: #3a425f !important;
+            color: #f0d0d0 !important;
+            border: 1px solid #4a526f;
+        }
+
+        #status {
+            font-weight: bold;
+            font-size: 24px;
+            margin-top: 30px;
+            min-height: 32px;
+        }
+
+        /* Dark mode toggle button */
+        #dark-mode-toggle {
+            position: absolute;
+            bottom: -60px;
+            right: 0;
+            padding: 8px 12px;
+            font-size: 12px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .dark-mode #dark-mode-toggle {
+            border: 1px solid #4a526f;
+            background-color: #3a425f !important;
+            color: #f0d0d0 !important;
+        }
+
+        body,
+        button,
+        input {
+            transition: background-color 1.5s,
+                color 1.5s,
+                border-color 1.5s;
+        }
+
+        /* Media query for landscape orientation */
+        @media (orientation: landscape) {
+            #app-wrapper {
+                flex-direction: row;
+            }
+
+            #countdown-circle {
+                margin-right: 20px;
+                margin-bottom: 0;
+                /* Remove bottom margin in landscape */
+            }
+        }

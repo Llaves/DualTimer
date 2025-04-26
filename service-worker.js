@@ -5,7 +5,9 @@ const assets = [
   "icon180.png",
   "service-worker.js",
   "alarm.mp3",  
-  "beep2.mp3"  
+  "beep2.mp3" ,
+  "timer.css",
+  "timer.js",
 ];
 
 self.addEventListener("install", event => {
