@@ -31,39 +31,72 @@
         }
 
         body {
-            background-color: #ffffff;
+            background-color: bisque;
             color: #333333;
+            display: flex;
+            /* Use Flexbox on body */
+            justify-content: center;
+            /* Center horizontally */
+            align-items: center;
+            /* Center vertically */
         }
 
         body.dark-mode {
             background-color: #1a2342 !important;
-            /* Dark blue background */
             color: #f0d0d0 !important;
-            /* Light reddish gray text */
         }
 
-        /* Wrapper to hold all elements except the toggle */
+        #app-wrapper {
+            display: flex;
+            flex-direction: column;
+            /* Default to column for portrait */
+            align-items: center;
+            /* Center items horizontally */
+            justify-content: center;
+            /* Center items vertically */
+            width: 100%;
+            min-height: 100%;
+        }
+
+        /* Countdown Circle */
+        #countdown-circle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 12em;
+            font-weight: bold;
+            color: hsl(80, 59%, 45%);
+            background-color: #ffffff;
+            border: 2px solid #333;
+            transition: all 0.5s ease;
+            margin-bottom: 20px;
+            /* Spacing in portrait */
+        }
+
+        .dark-mode #countdown-circle {
+            color: #f0d0d0;
+            border-color: #f0d0d0;
+        }
+
+        /* Wrapper to hold timer controls */
         .wrapper {
             text-align: center;
             display: inline-block;
-            /* Important for content-based width */
-            position: relative;
-            /* Make the wrapper the positioning context */
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             padding: 10px;
-            margin: 0px;
+            margin: 0;
+            /* Reset margins */
             border: 2px solid #333333;
             border-radius: 10px;
-						 background-color: Bisque;
+            background-color: #FFFFFF;
+            transition: all 0.5s ease;
         }
 
         .dark-mode .wrapper {
             border-color: #f0d0d0;
         }
 
-        /* Main container - multiple positioning techniques for cross-browser compatibility */
+        /* Main container for timer elements */
         .app-container {
             display: flex;
             flex-direction: column;
@@ -149,9 +182,7 @@
         #dark-mode-toggle {
             position: absolute;
             bottom: -60px;
-            /* Position 30px below the bottom of the wrapper */
             right: 0;
-            /* Align to the right edge of the wrapper */
             padding: 8px 12px;
             font-size: 12px;
             background-color: #f0f0f0;
@@ -175,37 +206,53 @@
                 color 1.5s,
                 border-color 1.5s;
         }
+
+        /* Media query for landscape orientation */
+        @media (orientation: landscape) {
+            #app-wrapper {
+                flex-direction: row;
+            }
+
+            #countdown-circle {
+                margin-right: 20px;
+                margin-bottom: 0;
+                /* Remove bottom margin in landscape */
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="wrapper">
-        <div class="app-container">
-            <h1>Dual Timer App</h1>
+    <div id="app-wrapper">
+        <div id="countdown-circle"></div>
+        <div class="wrapper">
+            <div class="app-container">
+                <h1>Dual Timer App</h1>
 
-            <div class="program-buttons">
-                <button id="p1Button" onclick="selectProgram(1)">P1</button>
-                <button id="p2Button" onclick="selectProgram(2)">P2</button>
-                <button id="p3Button" onclick="selectProgram(3)">P3</button>
-            </div>
+                <div class="program-buttons">
+                    <button id="p1Button" onclick="selectProgram(1)">P1</button>
+                    <button id="p2Button" onclick="selectProgram(2)">P2</button>
+                    <button id="p3Button" onclick="selectProgram(3)">P3</button>
+                </div>
 
-            <div class="timer-container">
-                <label>Timer 1 (seconds):</label>
-                <input type="number" id="timer1" min="0" max="60" value="5">
+                <div class="timer-container">
+                    <label>Timer 1 (seconds):</label>
+                    <input type="number" id="timer1" min="0" max="60" value="5">
+                </div>
+                <div class="timer-container">
+                    <label>Timer 2 (seconds):</label>
+                    <input type="number" id="timer2" min="0" max="60" value="30">
+                </div>
+                <div class="button-group">
+                    <button id="startButton" onclick="startTimers()">Start</button>
+                    <button onclick="stopTimers()">Stop</button>
+                    <button onclick="resetTimers()">Reset</button>
+                </div>
+                <p id="status"></p>
+                <button id="dark-mode-toggle">Dark Mode</button>
             </div>
-            <div class="timer-container">
-                <label>Timer 2 (seconds):</label>
-                <input type="number" id="timer2" min="0" max="60" value="30">
-            </div>
-            <div class="button-group">
-                <button id="startButton" onclick="startTimers()">Start</button>
-                <button onclick="stopTimers()">Stop</button>
-                <button onclick="resetTimers()">Reset</button>
-            </div>
-            <p id="status"></p>
-            <button id="dark-mode-toggle">Dark Mode</button>
-            </div>
+        </div>
     </div>
 
     <audio id="alarm" src="alarm.mp3" preload="auto" muted></audio>
@@ -224,6 +271,8 @@
         const p1Button = document.getElementById('p1Button');
         const p2Button = document.getElementById('p2Button');
         const p3Button = document.getElementById('p3Button');
+        const wrapper = document.querySelector('.wrapper');
+        const countdownCircle = document.getElementById('countdown-circle');
 
         let alarm = document.getElementById("alarm");
         let tickSound = document.getElementById("tickSound");
@@ -234,6 +283,9 @@
             3: { timer1: 30, timer2: 10 } // Default values, will load from storage
         };
         let currentProgram = 1;
+        let lastTimer = ""; // Keep track of the last active timer
+        let remainingTime1 = 0;
+        let remainingTime2 = 0;
 
         // Load settings from localStorage
         function loadSettings() {
@@ -252,6 +304,7 @@
             }
 
             selectProgram(parseInt(localStorage.getItem('lastProgram', 1) || 1));
+            updateCountdownCircleSize(); // Initial size
         }
 
         function saveSettings() {
@@ -274,6 +327,7 @@
             timer1Input.value = programs[currentProgram].timer1;
             timer2Input.value = programs[currentProgram].timer2;
             saveSettings();
+            countdownCircle.textContent = programs[currentProgram].timer1;
         }
 
         // Save timer values when they change
@@ -305,14 +359,25 @@
             loadSettings();
             alarm.load(); // Preload the audio
             tickSound.load();
+            updateCountdownCircleSize();
+            window.addEventListener('resize', updateCountdownCircleSize);
+            countdownCircle.textContent = programs[currentProgram].timer1;
         };
+
+        function updateCountdownCircleSize() {
+            let wrapperWidth = wrapper.offsetWidth;
+            let wrapperHeight = wrapper.offsetHeight;
+            let circleSize = Math.max(wrapperWidth, wrapperHeight) * .8; // Slightly larger
+
+            countdownCircle.style.width = `${circleSize}px`;
+            countdownCircle.style.height = `${circleSize}px`;
+        }
 
         function startTimers() {
             alarm.muted = false;
             tickSound.muted = false;
             if (running) return;
             running = true;
-            paused = false;
             document.getElementById("startButton").innerText = "Start";
             cycleTimers();
         }
@@ -349,6 +414,10 @@
             document.getElementById("startButton").innerText = "Start";
             document.getElementById('status').innerText = "Timers reset.";
             tickSound.pause();
+            countdownCircle.textContent = programs[currentProgram].timer1;
+            remainingTime1 = 0;
+            remainingTime2 = 0;
+            lastTimer = "";
         }
 
         function cycleTimers() {
@@ -357,51 +426,121 @@
             let timer1 = programs[currentProgram].timer1;
             let timer2 = programs[currentProgram].timer2;
 
-            runTimer("Timer 1", timer1, () => {
-                if (running && timer1 > 0) playAlarm(() => {
-                    runTimer("Timer 2", timer2, () => {
-                        if (running && timer2 > 0) playAlarm(() => {
-                            cycleTimers();
-                        });
-                        else if (running) cycleTimers(); // If timer2 is zero, cycle again
+            // Determine which timer to start based on lastTimer
+            if (paused) {
+                paused = false; // Reset paused state
+
+                if (lastTimer === "Timer 1") {
+                    runTimer("Timer 1", remainingTime1, () => {
+                        timer2Sequence(programs[currentProgram].timer2);
                     });
-                });
-                else if (running) runTimer("Timer 2", timer2, () => {
-                    if (running && timer2 > 0) playAlarm(() => {
+                } else if (lastTimer === "Timer 2") {
+                    runTimer("Timer 2", remainingTime2, () => {
+                        timer1Sequence(timer1);
+                    });
+                } else {
+                    // If no timer was running before pause, start with Timer 1
+                    timer1Sequence(timer1);
+                }
+            } else {
+                // If not paused, start with Timer 1
+                timer1Sequence(timer1);
+            }
+        }
+
+        function timer1Sequence(timer1) {
+            runTimer("Timer 1", timer1, () => {
+                if (running && timer1 > 0) {
+                    playAlarm(() => {
+                        timer2Sequence(programs[currentProgram].timer2);
+                    });
+                } else if (running) {
+                    timer2Sequence(programs[currentProgram].timer2);
+                }
+            });
+        }
+
+        function timer2Sequence(timer2) {
+            runTimer("Timer 2", timer2, () => {
+                if (running && timer2 > 0) {
+                    playAlarm(() => {
                         cycleTimers();
                     });
-                    else if (running) cycleTimers();
-                });
+                } else if (running) {
+                    cycleTimers();
+                }
             });
         }
 
         function runTimer(timerName, seconds, callback) {
             if (!running) {
+                tickSound.pause();
                 callback();
                 return;
             }
 
+            lastTimer = timerName; // Store the active timer
             currentTimer = timerName;
             remainingTime = seconds;
+            updateCountdownCircle(seconds);
+            tickSound.pause();
+
+            if (!paused) 
+                tickSound.currentTime = 0;
+            
             if (seconds > 0)
                 tickSound.play();
-            document.getElementById('status').innerText = `${timerName}: ${seconds} seconds left`;
+                
+            document.getElementById('status').innerText = `${timerName}: running`;
+
             let countdown = setInterval(() => {
                 if (!running) {
                     clearInterval(countdown);
                     tickSound.pause();
+                    if (timerName === "Timer 1") {
+                        remainingTime1 = seconds;
+                    } else if (timerName === "Timer 2") {
+                        remainingTime2 = seconds;
+                    }
                     return;
                 }
                 if (seconds <= 1) {
                     clearInterval(countdown);
                     remainingTime = 0;
                     tickSound.pause();
-                    callback();
+                    updateCountdownCircle("");
+
+                    if (timerName === "Timer 1") {
+                        remainingTime1 = 0;
+                    } else if (timerName === "Timer 2") {
+                        remainingTime2 = 0;
+                    }
+
+                    // Play alarm here, *before* calling the callback, ONLY if timer was paused
+                    if (paused) { // only play alarm if timer was paused.
+                        if (running) { //Ensure we should still be playing.
+                            playAlarm(callback);
+                        } else {
+                            callback();
+                        }
+                    } else {
+                        callback(); // Just call the callback if the timer wasn't paused.
+                    }
                 } else {
-                    document.getElementById('status').innerText = `${timerName}: ${--seconds} seconds left`;
+                    seconds--;
+                    updateCountdownCircle(seconds);
                     remainingTime = seconds;
+                    if (timerName === "Timer 1") {
+                        remainingTime1 = seconds;
+                    } else if (timerName === "Timer 2") {
+                        remainingTime2 = seconds;
+                    }
                 }
             }, 1000);
+        }
+
+        function updateCountdownCircle(seconds) {
+            countdownCircle.textContent = seconds;
         }
     </script>
 </body>
