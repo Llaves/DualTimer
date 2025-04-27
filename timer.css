@@ -55,7 +55,14 @@
             transition: all 0.5s ease;
             margin-bottom: 20px;
             /* Spacing in portrait */
+            text-shadow:
+            -2px -2px 0 #000,  
+             2px -2px 0 #000,
+            -2px  2px 0 #000,
+             2px  2px 0 #000; 
         }
+
+
 
         .dark-mode #countdown-circle {
             color: #f0d0d0;
