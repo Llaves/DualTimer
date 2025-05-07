@@ -111,10 +111,7 @@ function startTimers() {
     else  if (running)    
         return;
 
-    
     running = true;
-
-
 
     document.getElementById("startButton").innerText = "Pause";  //reset the text after the toggle is pressed.
     document.getElementById('status').innerText = "";
@@ -140,15 +137,6 @@ let paused = false;
 let remainingTime = 0;
 let currentTimer = "";
 
-function stopTimers() {
-    if (!running) return;
-    running = false;
-    paused = true;
-    document.getElementById("startButton").innerText = "Resume";
-    document.getElementById('status').innerText = "Timers paused.";
-    //tickSound.pause();
-    //countdownSound.pause(); // Make sure to also pause countdown sound
-}
 
 function resetTimers() {
     running = false;
