@@ -100,23 +100,23 @@ function startTimers() {
     alarm.muted = false;
     tickSound.muted = false;
     countdownSound.muted = false; // Ensure countdown sound is not muted
-    if (running) return;
-
-    // Toggle running state
-    running = !running;
-
-    // Toggle pause state only if we're stopping the timer
-    if (!running) {
-        paused = true;
-        document.getElementById("startButton").innerText = "Resume";
+    if (running && document.getElementById("startButton").innerText === "Pause") {
+        paused = true; // Set paused to true if already running and button is "Pause"
+        document.getElementById("startButton").innerText = "Resume"; // Change button text to "Resume"
         document.getElementById('status').innerText = "Timers paused.";
-        tickSound.pause();  // Keep the pause here, but only if STOPPING
-        countdownSound.pause(); // Also pause countdown sound
-        console.log("startTimers: Setting paused to true, exiting"); // Added log
-        return; //Very important to exit here, after the pause button has been pressed.
+        running = false; // Set running to false to stop the timers
+        console.log("startTimers: Paused flag set to true"); // Added Log
+        return;
     }
+    else  if (running)    
+        return;
 
-    document.getElementById("startButton").innerText = "Start";  //reset the text after the toggle is pressed.
+    
+    running = true;
+
+
+
+    document.getElementById("startButton").innerText = "Pause";  //reset the text after the toggle is pressed.
     document.getElementById('status').innerText = "";
     console.log("startTimers: Paused flag before cycleTimers: ", paused); //Added Log
 
@@ -141,6 +141,7 @@ let remainingTime = 0;
 let currentTimer = "";
 
 function stopTimers() {
+    if (!running) return;
     running = false;
     paused = true;
     document.getElementById("startButton").innerText = "Resume";
